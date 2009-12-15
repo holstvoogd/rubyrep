@@ -270,6 +270,10 @@ module RR
     
         rows.map {|row| [row['name'], row['type'], row['source'], row['notnull']]}
       end
+      
+      def reachable?
+        select_one("select 1+1 as x")['x'].to_i == 2
+      end
 
     end
   end

@@ -61,10 +61,13 @@ module RR
 
           if options[:row_buffer_size]
             # Set the batch size
-            query += " limit #{options[:row_buffer_size]}"
+            if connection.respond_to? "add_limit_offset!"
+              query = connection.add_limit_offset!(query, :limit =>options[:row_buffer_size] )
+            else
+              query += " LIMIT #{options[:row_buffer_size]}"
+            end
           end
         end
-
         self.rows = connection.select_all query
         self.current_row_index = 0
       end
@@ -76,11 +79,11 @@ module RR
       raise("no more rows available") unless next?
       self.last_row = self.rows[self.current_row_index]
       self.current_row_index += 1
-
+    
       if self.current_row_index == self.rows.size
         self.rows = nil
       end
-
+      
       self.last_row
     end
 
@@ -115,7 +118,8 @@ module RR
       :create_or_replace_replication_trigger_function,
       :create_replication_trigger, :drop_replication_trigger, :replication_trigger_exists?,
       :sequence_values, :update_sequences, :clear_sequence_setup,
-      :drop_table, :add_big_primary_key, :add_column, :remove_column
+      :drop_table, :add_big_primary_key, :add_column, :remove_column,
+      "add_limit_offset!"
 
     # Caching the primary keys. This is a hash with
     #   * key: table name
@@ -304,12 +308,12 @@ module RR
     #   * +row+: a hash of primary key => value pairs designating the target row
     #   * +condition+: the type of sql condition (something like '>=' or '=', etc.)
     def row_condition(table, row, condition)
-      query_part = ""
-      query_part << ' (' << quote_key_list(table) << ') ' << condition
-      query_part << ' (' << primary_key_names(table).map do |key|
-        quote_value(table, key, row[key])
-      end.join(', ') << ')'
-      query_part
+      query_parts = []
+      primary_key_names(table).each do |key|
+        key = key.strip
+        query_parts << "(#{key} #{condition} #{quote_value(table, key, row[key])})"
+      end
+      " (#{query_parts.join(" AND ")}) "
     end
     private :row_condition
 
@@ -352,7 +356,6 @@ module RR
         end
       end
       query << " order by #{quote_key_list(table)}"
-
       query
     end
     

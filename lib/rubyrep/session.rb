@@ -125,7 +125,7 @@ module RR
       unreachable = true
       Thread.new do
         begin
-          if send(database) && send(database).select_one("select 1+1 as x")['x'].to_i == 2
+          if send(database) && send(database).connection.reachable?
             unreachable = false # database is actually reachable
           end
         end rescue nil

@@ -26,6 +26,10 @@ module RR
         columns = rows.map {|_row| _row['column_name']}
         columns
       end
+      
+      def reachable?
+        select_one("select 1+1 as x")['x'].to_i == 2
+      end
 
       # Returns for each given table, which other tables it references via
       # foreign key constraints.
