@@ -27,8 +27,8 @@ module RR
         end
 
         def create_or_replace_replication_trigger_function(params)
-          drop_replication_trigger(params['trigger_name'], params['table']) if replication_trigger_exists?(params['trigger_name'], params['table'])
-          create_replication_trigger(params)
+          # drop_replication_trigger(params['trigger_name'], params['table']) if replication_trigger_exists?(params['trigger_name'], params['table'])
+          #           create_replication_trigger(params)
         end
 
         # Creates a trigger to log all changes for the given table.
@@ -101,9 +101,10 @@ module RR
         # * +trigger_name+: name of the trigger
         # * +table_name+: name of the table
         def replication_trigger_exists?(trigger_name, table_name)
-          trigger_base = trigger_base_name(table_name).upcase
-          sql = "select 1 from syscat.triggers where trigname = '#{trigger_base}_INSERT'"
-          !select_all(sql).empty?
+          # trigger_base = trigger_base_name(table_name).upcase
+          #         sql = "select 1 from syscat.triggers where trigname = '#{trigger_base}_INSERT'"
+          #         !select_all(sql).empty?
+          false
         end
 
         # Returns all unadjusted sequences of the given table.

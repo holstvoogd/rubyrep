@@ -106,7 +106,7 @@ module RR
            WHERE schemaname IN (#{schemas})
         SQL
       end
-
+      
       # Disables schema extraction from table names by overwriting the according
       # ActiveRecord method.
       # Necessary to support table names containing dots (".").
@@ -270,7 +270,7 @@ module RR
     
         rows.map {|row| [row['name'], row['type'], row['source'], row['notnull']]}
       end
-      
+            
       def reachable?
         select_one("select 1+1 as x")['x'].to_i == 2
       end

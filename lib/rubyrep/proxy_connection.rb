@@ -39,7 +39,7 @@ module RR
     def next?
       unless self.rows
         # Try to load some records
-        
+              
         if options[:query] and last_row != nil
           # A query was directly specified and all it's rows were returned
           # ==> Finished.
@@ -58,7 +58,7 @@ module RR
           end
 
           query = connection.table_select_query(options[:table], options)
-
+                    
           if options[:row_buffer_size]
             # Set the batch size
             if connection.respond_to? "add_limit_offset!"
@@ -68,6 +68,7 @@ module RR
             end
           end
         end
+        
         self.rows = connection.select_all query
         self.current_row_index = 0
       end
@@ -254,7 +255,11 @@ module RR
         table_columns[table] = {}
         columns(table).each {|c| table_columns[table][c.name] = c}
       end
-      connection.quote value, table_columns[table][column]
+      result = connection.quote value, table_columns[table][column]
+      if table == "synonyms" && column == "weight"
+        result = result.sub(",", ".")
+      end
+      result
     end
     
     # Create a cursor for the given table.
@@ -309,6 +314,7 @@ module RR
     #   * +condition+: the type of sql condition (something like '>=' or '=', etc.)
     def row_condition(table, row, condition)
       query_parts = []
+
       primary_key_names(table).each do |key|
         key = key.strip
         query_parts << "(#{key} #{condition} #{quote_value(table, key, row[key])})"
@@ -323,12 +329,14 @@ module RR
     #   * :+exclude_starting_row+: if true, do not include the row specified by :+from+
     #   * :+to+: nil OR the hash of primary key => value pairs designating the end of the selection
     #   * :+row_keys+: an array of primary key => value hashes specify the target rows.
+    #   * :+sql_filter+: an sql condition string applied to all queries
     def table_select_query(table, options = {})
       query = "select #{quote_column_list(table)}"
       query << " from #{quote_table_name(table)}"
-      query << " where" if [:from, :to, :row_keys].any? {|key| options.include? key}
+      query << " where" if [:from, :to, :row_keys, :table_from, :table_to].any? {|key| options.include? key}
       first_condition = true
       if options[:from]
+        query << ' and' unless first_condition
         first_condition = false
         matching_condition = options[:exclude_starting_row] ? '>' : '>='
         query << row_condition(table, options[:from], matching_condition)
@@ -337,6 +345,17 @@ module RR
         query << ' and' unless first_condition
         first_condition = false
         query << row_condition(table, options[:to], '<=')
+      end
+      if options[:table_from]
+        query << ' and' unless first_condition
+        first_condition = false
+        matching_condition = options[:exclude_starting_row] ? '>' : '>='
+        query << row_condition(table, options[:table_from], matching_condition)
+      end
+      if options[:table_to]
+        query << ' and' unless first_condition
+        first_condition = false
+        query << row_condition(table, options[:table_to], '<=')
       end
       if options[:row_keys]
         query << ' and' unless first_condition

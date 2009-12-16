@@ -86,7 +86,7 @@ module RR
       connection
     end
     
-    @@use_cache = true
+    @@use_cache = false
     
     # Returns the current cache status (+true+ if caching is used; +false+ otherwise).
     def self.use_cache?; @@use_cache; end
